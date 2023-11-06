@@ -26,9 +26,13 @@ whoami
 chown $USER /var/run/docker.sock
 ```
 
-# 2. Clone the Github code :-
+# 2. Setup Kubernetes cluster :-
+- https://github.com/rutikdevops/Kubernetes-by-Rutik-Kapadnis/blob/main/kubeadm_installation.md 
+
+
+# 3. Clone the Github code :-
 ```bash
-git clone https://github.com/rutikdevops/DevOps-Project-5.git
+git clone https://github.com/rutikdevops/DevOps-Project-7.git
 cd DevOps-Project-5
 ls
 mkdir k8s1
@@ -57,14 +61,15 @@ spec:
     ports:
       - containerPort: 5000
     imagePullPolicy: Always
-```
 
-```bash
+
 kubectl apply -f two-tier-app-pod.yml
 kubectl get pods
 ```
 
+
 - Create Deployment pod
+
 ```bash
 vi two-tier-app-deployment.yml
 
@@ -99,13 +104,12 @@ spec:
           ports:
             - containerPort: 5000
           imagePullPolicy: Always
-```
 
-```bash
 kubectl apply -f two-tier-app-deployment.yml
 kubectl get pods
 ```
 
+- Create service for the app
 
 ```bash
 vi two-tier-app-svc.yml
@@ -123,9 +127,7 @@ spec:
       targetPort: 5000
       nodePort: 30004
   type: NodePort
-```
 
-```bash
 kubectl apply -f two-tier-app-svc.yml
 kubectl get service
 ```
@@ -138,6 +140,9 @@ ls
 cd k8s1
 ls
 ```
+
+
+- Create mysql persistent volume
 
 ```bash
 vi mysql-pv.yml
@@ -162,6 +167,7 @@ kubectl apply -f mysql-pv.yml
 
 
 
+- Create mysql persistent volume
 
 ```bash
 vi mysql-pvc.yml
@@ -180,11 +186,6 @@ spec:
 
 kubectl apply -f mysql-pvc.yml
 ```
-
-
-
-
-
 
 
 ```bash
