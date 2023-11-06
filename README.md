@@ -132,9 +132,53 @@ kubectl get service
 
 
 ```bash
-vi mysql-deployment.yml
+cd ..
+mkdir mysqldata
+ls
+cd k8s1
+ls
+```
+
+```bash
+vi mysql-pv.yml
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv
+spec:
+  capacity:
+    storage: 256Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /home/ubuntu/two-tier-flask-app/mysqldata
 
 
+kubectl apply -f mysql-pv.yml
+```
+
+
+
+
+```bash
+vi mysql-pvc.yml
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 256Mi
+
+
+kubectl apply -f mysql-pvc.yml
 ```
 
 
@@ -143,11 +187,133 @@ vi mysql-deployment.yml
 
 
 
+```bash
+vi mysql-deployment.yml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:latest
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "admin"
+            - name: MYSQL_DATABASE
+              value: "mydb"
+            - name: MYSQL_USER
+              value: "admin"
+            - name: MYSQL_PASSWORD
+              value: "admin"
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysqldata
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysqldata
+          persistentVolumeClaim:
+            claimName: mysql-pvc
 
 
+kubectl apply -f mysql-deployment.yml
+kubectl get pods
+```
 
 
+```bash
+vi mysql-svc.yml
 
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+
+kubectl apply -f mysql-svc.yml
+kubectl get svc
+```
+
+
+<img width="948" alt="image" src="https://github.com/rutikdevops/DevOps-Project-7/assets/109506158/45051ac1-0caa-487e-8119-49ca4e5c94a3">
+
+- Go to two-tier-app-deployment.yml and paste mysql cluster-ip
+```bash
+vi two-tier-app-deployment.yml
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: two-tier-app
+  labels:
+    app: two-tier-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: two-tier-app
+  template:
+    metadata:
+      labels:
+        app: two-tier-app
+    spec:
+      containers:
+        - name: two-tier-app
+          image: rutikdevops/flaskapp
+          env:
+            - name: MYSQL_HOST
+              value: "10.105.204.5"          # this is your mysql's service clusture IP, Make sure to change it with yours
+            - name: MYSQL_PASSWORD
+              value: "admin"
+            - name: MYSQL_USER
+              value: "root"
+            - name: MYSQL_DB
+              value: "mydb"
+          ports:
+            - containerPort: 5000
+          imagePullPolicy: Always
+
+
+kubectl apply -f two-tier-app-deployment.yml
+```
+
+- Goto worker node and type docker ps
+- search mysql container
+- Then copy mysql container id
+
+```bash
+docker exec -it <container id> bash
+mysql -u root -p
+// enter password
+show databases;
+use mydb;
+
+CREATE TABLE messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    message TEXT
+);
+```
+
+- Now, your flask app is working
 
 
 
